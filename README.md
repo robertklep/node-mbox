@@ -16,7 +16,7 @@ idea on how much this speeds things up, when parsing a 600MB mbox file
 *  with 32MB buffer: about 20 seconds
 *  with 64MB buffer:  about 3 seconds
 
-If you don't have any memory to spare, just set the `buffer_size` options
+If you don't have any memory to spare, just set the `buffer_size` option
 to 0.
 
 Note that this module doesn't parse the mail messages themselves, for which
