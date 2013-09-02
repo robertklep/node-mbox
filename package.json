@@ -1,0 +1,27 @@
+{
+  "name": "node-mbox",
+  "description": "mbox parser for Node",
+  "author": {
+    "name": "Robert Klep",
+    "email": "robert.klep@gmail.com"
+  },
+  "keywords": [
+    "e-mail",
+    "mbox"
+  ],
+  "version": "0.0.1",
+  "main": "./src/mbox.js",
+  "bugs": {
+    "email": "robert.klep+node-mbox@gmail.com",
+    "url": "https://github.com/robertklep/node-mbox/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/robertklep/node-mbox.git"
+  },
+  "devDependencies": {
+    "mocha": "~1.12.1",
+    "should": "~1.2.2"
+  }
+}
