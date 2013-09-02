@@ -63,10 +63,13 @@ function MboxStream(input, opts) {
     return new MboxStream(opts);
   Transform.call(this, opts);
 
+  // keep track of number of messages found
+  this.number_of_messages = 0;
+
   // handle 'finish' event.
   this.on('finish', function() {
     this.findMessages(true);
-    this.emit('end');
+    this.emit('end', this.number_of_messages);
   });
 
   // buffer to contain data read so-far (the '\n' is a shortcut so we can match
@@ -87,13 +90,14 @@ MboxStream.prototype.findMessages = function(EOF) {
       if (EOF)
         end = this.buffer.length;
       else
-        // otherwise, just quit processing.
+        // otherwise, just quit processing for now.
         break;
     }
 
     // pluck message from buffer and emit event
     var message = this.buffer.substring(1, end);
     this.emit('message', message);
+    this.number_of_messages++;
 
     // adjust buffer so the message is removed
     this.buffer = this.buffer.substring(end);
