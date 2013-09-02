@@ -43,14 +43,20 @@ function MboxStream(input, opts) {
     if (klass === 'ReadStream')
       handle = input;
     else
-      throw Error('Unknown input type for mbox constructor');
+    if (klass === 'Object')
+      opts = input;
 
-    // set encoding
-    handle.setEncoding('ascii');
+    if (handle) {
+      // set encoding
+      handle.setEncoding('ascii');
 
-    // pipe handle to ourselves
-    handle.pipe(this);
+      // pipe handle to ourselves
+      handle.pipe(this);
+    }
   }
+
+  // setup memory buffer size
+  this.buffer_size = (opts && opts.buffer_size !== undefined) ? opts.buffer_size : 64;
 
   // setup stream transformer
   if (!(this instanceof MboxStream))
@@ -69,13 +75,10 @@ function MboxStream(input, opts) {
 }
 
 MboxStream.prototype.findMessages = function(EOF) {
-  // find start of message
-  var start = this.buffer.indexOf('\nFrom ');
-
-  // continue while we're finding message in the current buffer
-  while (start !== -1) {
+  // continue while we're finding messages in the current buffer
+  while (this.buffer.substring(0, 6) === '\nFrom ') {
     // find end of message
-    var end = this.buffer.indexOf('\nFrom ', start + 1);
+    var end = this.buffer.indexOf('\nFrom ', 2);
 
     // end wasn't found?
     if (end === -1) {
@@ -89,20 +92,18 @@ MboxStream.prototype.findMessages = function(EOF) {
     }
 
     // pluck message from buffer and emit event
-    var message = this.buffer.substring(start + 1, end);
+    var message = this.buffer.substring(1, end);
     this.emit('message', message);
 
     // adjust buffer so the message is removed
-    this.buffer = this.buffer.substring(0, start) + this.buffer.substring(end);
-
-    // let's try if we can find another message
-    start = this.buffer.indexOf('\nFrom ');
+    this.buffer = this.buffer.substring(end);
   }
 };
 
 MboxStream.prototype._transform = function(chunk, encoding, done) {
   this.buffer += chunk;
-  this.findMessages();
+  if (this.buffer.length > (this.buffer_size * 1024 * 1024))
+    this.findMessages();
   done();
 };
 

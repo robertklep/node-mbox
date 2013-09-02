@@ -7,11 +7,27 @@ Description
 -----------
 This module parses mbox files, as described [here](http://qmail.org./man/man5/mbox.html).
 
-If you're using streams (see [Usage](#usage)), it will only buffer enough data in memory until it can parse a complete mail message,
-at which point a `message` event is generated and the message will be removed from the internal buffer.
+To speed things up, this module uses a memory buffer to read up to X MB (by
+default, X equals 64) into memory before parsing out messages. To give an
+idea on how much this speeds things up, when parsing a 600MB mbox file
+(containing about 11K messages):
 
-Note that this module doesn't parse the mail messages themselves, for which other solutions exist (for example the quite
-able [mailparser](https://github.com/andris9/mailparser) module from Andris Reinman).
+*  without any buffering: about 80 seconds
+*  with 32MB buffer: about 20 seconds
+*  with 64MB buffer:  about 3 seconds
+
+If you don't have any memory to spare, just set the `buffer_size` options
+to 0.
+
+Note that this module doesn't parse the mail messages themselves, for which
+other solutions exist (for example the quite able
+[mailparser](https://github.com/andris9/mailparser) module from Andris
+Reinman).
+
+Options
+-------
+
+*  `buffer_size` : number of MB's to use for internal buffering (default: 64; set to 0 to turn off buffering)
 
 Usage
 -----
@@ -21,20 +37,20 @@ var Mbox = require('node-mbox');
 // First, different types of instantiation:
 
 // 1. pass it a filename
-var mbox    = new Mbox('filename');
+var mbox    = new Mbox('filename', { /* options */ });
 
 // 2. pass it a string
 var fs      = require('fs');
 var mailbox = fs.readFileSync('filename');
-var mbox    = new Mbox(mailbox);
+var mbox    = new Mbox(mailbox, { /* options */ });
 
 // 3. pass it a stream
 var fs      = require('fs');
 var stream  = fs.createReadStream('filename');
-var mbox    = new Mbox(stream);
+var mbox    = new Mbox(stream, { /* options */ });
 
 // 4. pipe a stream to it
-var mbox    = new Mbox();
+var mbox    = new Mbox({ /* options */ });
 process.stdin.pipe(mbox);
 
 // Next, catch events generated:
