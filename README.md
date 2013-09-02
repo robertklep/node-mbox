@@ -46,3 +46,7 @@ mbox.on('end', function() {
   console.log('done reading mbox file');
 });
 ```
+
+License
+-------
+[MIT](https://raw.github.com/robertklep/node-mbox/master/LICENSE)
