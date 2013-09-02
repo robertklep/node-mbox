@@ -3,6 +3,20 @@ node-mbox
 
 mbox file parser for Node.js.
 
+Install
+-------
+From the NPM repository:
+```
+$ npm install node-mbox
+```
+
+From the Github repository:
+```
+$ git clone https://github.com/robertklep/node-mbox.git
+$ cd node-mbox
+$ npm install [-g]
+```
+
 Description
 -----------
 This module parses mbox files, as described [here](http://qmail.org./man/man5/mbox.html).
@@ -23,6 +37,14 @@ Note that this module doesn't parse the mail messages themselves, for which
 other solutions exist (for example the quite able
 [mailparser](https://github.com/andris9/mailparser) module from Andris
 Reinman).
+
+Example
+-------
+See the included `example.js`:
+```
+$ npm install mailparser
+$ node example < test/test.mbox
+```
 
 Options
 -------
@@ -61,6 +83,14 @@ mbox.on('message', function(msg) {
 mbox.on('end', function() {
   console.log('done reading mbox file');
 });
+```
+
+Testing
+-------
+There is a limited number of tests which can be run with Mocha:
+```
+$ cd /path/to/node-mbox/
+$ mocha
 ```
 
 License
