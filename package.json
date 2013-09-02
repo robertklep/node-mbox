@@ -9,7 +9,7 @@
     "e-mail",
     "mbox"
   ],
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./src/mbox.js",
   "bugs": {
     "email": "robert.klep+node-mbox@gmail.com",
