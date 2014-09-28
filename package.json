@@ -1,6 +1,9 @@
 {
   "name": "node-mbox",
   "description": "mbox parser for Node",
+  "scripts" : {
+    "test" : "mocha -R spec --require should test/"
+  },
   "author": {
     "name": "Robert Klep",
     "email": "robert.klep@gmail.com"
@@ -9,7 +12,7 @@
     "e-mail",
     "mbox"
   ],
-  "version": "0.0.2",
+  "version": "0.1.0",
   "main": "./src/mbox.js",
   "bugs": {
     "email": "robert.klep+node-mbox@gmail.com",
@@ -21,7 +24,10 @@
     "url": "git://github.com/robertklep/node-mbox.git"
   },
   "devDependencies": {
-    "mocha": "~1.12.1",
-    "should": "~1.2.2"
+    "mocha": "^1.21.4",
+    "should": "^4.0.4"
+  },
+  "dependencies": {
+    "streamsearch": "^0.1.2"
   }
 }

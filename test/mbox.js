@@ -1,8 +1,7 @@
 var Mbox    = require('../src/mbox');
-var should  = require('should');
 var fs      = require('fs');
 var test    = function(parser, done) {
-  var count     = 0; 
+  var count     = 0;
   var messages  = [];
   parser.on('message', function(msg) {
     count++;
@@ -12,7 +11,7 @@ var test    = function(parser, done) {
     count.should.equal(3);
     messages[0].length.should.equal(286);
     messages[1].length.should.equal(296);
-    messages[2].length.should.equal(297);
+    messages[2].length.should.equal(296);
     done();
   });
 };

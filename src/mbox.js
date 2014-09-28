@@ -1,8 +1,9 @@
-var Readable    = require('stream').Readable;
-var Transform   = require('stream').Transform;
-var util        = require('util');
-var fs          = require('fs');
-var Stream      = require('stream');
+var Readable      = require('stream').Readable;
+var Transform     = require('stream').Transform;
+var StreamSearch  = require('streamsearch');
+var util          = require('util');
+var fs            = require('fs');
+var Stream        = require('stream');
 
 util.inherits(StringReader, Readable);
 util.inherits(MboxStream, Transform);
@@ -26,6 +27,8 @@ StringReader.prototype._read = function(size) {
 };
 
 function MboxStream(input, opts) {
+  var stream = this;
+
   // handle arguments
   if (input !== undefined) {
     var klass   = input.constructor.name;
@@ -55,59 +58,48 @@ function MboxStream(input, opts) {
     }
   }
 
-  // setup memory buffer size
-  this.buffer_size = (opts && opts.buffer_size !== undefined) ? opts.buffer_size : 64;
+  // output encoding
+  this.encoding = (opts && opts.encoding) ? opts.encoding : 'binary';
 
   // setup stream transformer
-  if (!(this instanceof MboxStream))
+  if (!(this instanceof MboxStream)) {
     return new MboxStream(opts);
+  }
   Transform.call(this, opts);
 
   // keep track of number of messages found
   this.number_of_messages = 0;
 
-  // handle 'finish' event.
+  // done
+  var chunks = [];
   this.on('finish', function() {
-    this.findMessages(true);
-    this.emit('end', this.number_of_messages);
+    if (chunks.length) {
+      stream.emit('message', chunks.join(''));
+    }
+    this.emit('end', stream.number_of_messages);
   });
 
-  // buffer to contain data read so-far (the '\n' is a shortcut so we can match
-  // against '\nFrom ' separators even for the first message in the mbox file).
-  this.buffer = '\n';
+  // setup stream searcher
+  this.searcher = new StreamSearch('\nFrom ');
+  this.searcher.on('info', function(isMatch, chunk, start, end) {
+    if (chunk) {
+      // Add needle.
+      chunks.push( 'From ' + chunk.toString(stream.encoding, start, end) );
+    }
+    if (isMatch && chunks.length) {
+      stream.number_of_messages++;
+      stream.emit('message', chunks.join(''));
+      chunks = [];
+    }
+  });
+
+  // Push a dummy \n to the search so we match the first message.
+  this.searcher.push('\n');
 }
 
-MboxStream.prototype.findMessages = function(EOF) {
-  // continue while we're finding messages in the current buffer
-  while (this.buffer.substring(0, 6) === '\nFrom ') {
-    // find end of message
-    var end = this.buffer.indexOf('\nFrom ', 2);
-
-    // end wasn't found?
-    if (end === -1) {
-      // if we hit the end of the file, assume the buffer contains the rest
-      // of the current message.
-      if (EOF)
-        end = this.buffer.length;
-      else
-        // otherwise, just quit processing for now.
-        break;
-    }
-
-    // pluck message from buffer and emit event
-    var message = this.buffer.substring(1, end);
-    this.emit('message', message);
-    this.number_of_messages++;
-
-    // adjust buffer so the message is removed
-    this.buffer = this.buffer.substring(end);
-  }
-};
-
 MboxStream.prototype._transform = function(chunk, encoding, done) {
-  this.buffer += chunk;
-  if (this.buffer.length > (this.buffer_size * 1024 * 1024))
-    this.findMessages();
+  // Push chunks to the searcher.
+  this.searcher.push(chunk);
   done();
 };
 
