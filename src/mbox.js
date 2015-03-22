@@ -74,6 +74,7 @@ function MboxStream(input, opts) {
   var chunks = [];
   this.on('finish', function() {
     if (chunks.length) {
+      stream.number_of_messages++;
       stream.emit('message', chunks.join(''));
     }
     this.emit('end', stream.number_of_messages);
