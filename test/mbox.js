@@ -7,8 +7,9 @@ var test    = function(parser, done) {
     count++;
     messages.push(msg);
   });
-  parser.on('end', function() {
+  parser.on('end', function(num) {
     count.should.equal(3);
+    num.should.equal(count);
     messages[0].length.should.equal(286);
     messages[1].length.should.equal(296);
     messages[2].length.should.equal(296);
