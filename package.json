@@ -1,5 +1,6 @@
 {
   "name": "node-mbox",
+  "version": "0.1.1",
   "description": "mbox parser for Node",
   "scripts" : {
     "test" : "mocha -R spec --require should test/"
@@ -12,7 +13,6 @@
     "e-mail",
     "mbox"
   ],
-  "version": "0.1.0",
   "main": "./src/mbox.js",
   "bugs": {
     "email": "robert.klep+node-mbox@gmail.com",
