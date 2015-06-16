@@ -75,7 +75,8 @@ function MboxStream(input, opts) {
   this.on('finish', function() {
     if (chunks.length) {
       stream.number_of_messages++;
-      stream.emit('message', chunks.join(''));
+      // Add the needle back in when emitting
+      stream.emit('message', 'From ' + chunks.join(''));
     }
     this.emit('end', stream.number_of_messages);
   });
@@ -84,12 +85,12 @@ function MboxStream(input, opts) {
   this.searcher = new StreamSearch('\nFrom ');
   this.searcher.on('info', function(isMatch, chunk, start, end) {
     if (chunk) {
-      // Add needle.
-      chunks.push( 'From ' + chunk.toString(stream.encoding, start, end) );
+      chunks.push( chunk.toString(stream.encoding, start, end) );
     }
     if (isMatch && chunks.length) {
       stream.number_of_messages++;
-      stream.emit('message', chunks.join(''));
+      // Add the needle back in when emitting
+      stream.emit('message', 'From ' + chunks.join(''));
       chunks = [];
     }
   });
