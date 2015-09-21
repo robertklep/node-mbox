@@ -43,7 +43,7 @@ function MboxStream(input, opts) {
         handle = new StringReader(input);
     }
     else
-    if (klass === 'ReadStream')
+    if (klass === 'ReadStream' || klass === 'DestroyableTransform')
       handle = input;
     else
     if (klass === 'Object')
