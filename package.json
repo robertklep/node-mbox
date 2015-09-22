@@ -25,7 +25,8 @@
   },
   "devDependencies": {
     "mocha": "^1.21.4",
-    "should": "^4.0.4"
+    "should": "^4.0.4",
+    "through2": "^2.0.0"
   },
   "dependencies": {
     "isstream": "^0.1.2",

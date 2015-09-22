@@ -1,6 +1,7 @@
-var Mbox    = require('../src/mbox');
-var fs      = require('fs');
-var test    = function(parser, done) {
+var Mbox     = require('../src/mbox');
+var fs       = require('fs');
+var through2 = require('through2');
+var test     = function(parser, done) {
   var count     = 0;
   var messages  = [];
   parser.on('message', function(msg) {
@@ -30,6 +31,13 @@ describe('parser', function() {
   it('should parse an mbox file passed as stream', function(done) {
     var stream = fs.createReadStream(__dirname + '/test.mbox');
     test(new Mbox(stream), done);
+  });
+
+  it('should parse an mbox file passed as through2 stream', function(done) {
+    var stream        = fs.createReadStream(__dirname + '/test.mbox');
+    var throughstream = through2();
+    stream.pipe(throughstream);
+    test(new Mbox(throughstream), done);
   });
 
   it('should parse an mbox file piped to it', function(done) {

@@ -37,18 +37,17 @@ function MboxStream(input, opts) {
 
     if (klass === 'String' || klass === 'Buffer') {
       // either filename...
-      if (fs.existsSync(input))
+      if (fs.existsSync(input)) {
         handle = fs.createReadStream(input);
-      // ...or raw input string (handled by StringReader)
-      else
+      } else {
+        // ...or raw input string (handled by StringReader)
         handle = new StringReader(input);
-    }
-    else
-    if (isStream(input))
+      }
+    } else if (isStream(input)) {
       handle = input;
-    else
-    if (klass === 'Object')
+    } else if (klass === 'Object') {
       opts = input;
+    }
 
     if (handle) {
       // set encoding
