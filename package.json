@@ -2,8 +2,8 @@
   "name": "node-mbox",
   "version": "0.2.1",
   "description": "mbox parser for Node",
-  "scripts" : {
-    "test" : "mocha -R spec --require should test/"
+  "scripts": {
+    "test": "mocha -R spec --require should test/"
   },
   "author": {
     "name": "Robert Klep",
@@ -28,6 +28,7 @@
     "should": "^4.0.4"
   },
   "dependencies": {
+    "isstream": "^0.1.2",
     "streamsearch": "^0.1.2"
   }
 }
