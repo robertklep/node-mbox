@@ -4,6 +4,7 @@ var StreamSearch  = require('streamsearch');
 var util          = require('util');
 var fs            = require('fs');
 var Stream        = require('stream');
+var isStream      = require('isstream');
 
 util.inherits(StringReader, Readable);
 util.inherits(MboxStream, Transform);
@@ -43,7 +44,7 @@ function MboxStream(input, opts) {
         handle = new StringReader(input);
     }
     else
-    if (klass === 'ReadStream' || klass === 'DestroyableTransform')
+    if (isStream(input))
       handle = input;
     else
     if (klass === 'Object')
