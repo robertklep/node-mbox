@@ -35,6 +35,7 @@ Options
 -------
 
 *  `encoding` : output encoding (default: `binary`).
+*  `strict` : enable strict mode (emits an error when input doesn't look like valid mbox data)
 
 Usage
 -----
@@ -63,6 +64,10 @@ process.stdin.pipe(mbox);
 // Next, catch events generated:
 mbox.on('message', function(msg) {
   console.log('got a message', msg);
+});
+
+mbox.on('error', function(err) {
+  console.log('got an error', err);
 });
 
 mbox.on('end', function() {

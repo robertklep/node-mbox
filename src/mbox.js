@@ -58,6 +58,9 @@ function MboxStream(input, opts) {
     }
   }
 
+  // strict mode throws an error when a file doesn't look like an mbox file.
+  this.strictMode = opts && opts.strict === true;
+
   // output encoding
   this.encoding = (opts && opts.encoding) ? opts.encoding : 'binary';
 
@@ -71,9 +74,10 @@ function MboxStream(input, opts) {
   this.number_of_messages = 0;
 
   // done
-  var chunks = [];
+  var chunks  = [];
+  var matches = 0;
   this.on('finish', function() {
-    if (chunks.length) {
+    if (matches) {
       stream.number_of_messages++;
       // Add the needle back in when emitting
       stream.emit('message', 'From ' + chunks.join(''));
@@ -85,13 +89,17 @@ function MboxStream(input, opts) {
   this.searcher = new StreamSearch('\nFrom ');
   this.searcher.on('info', function(isMatch, chunk, start, end) {
     if (chunk) {
-      chunks.push( chunk.toString(stream.encoding, start, end) );
+      chunk = chunk.toString(stream.encoding, start, end);
+      chunks.push(chunk);
     }
-    if (isMatch && chunks.length) {
-      stream.number_of_messages++;
+    if (isMatch) {
+      matches++;
       // Add the needle back in when emitting
-      stream.emit('message', 'From ' + chunks.join(''));
-      chunks = [];
+      if (chunks.length) {
+        stream.number_of_messages++;
+        stream.emit('message', 'From ' + chunks.join(''));
+        chunks = [];
+      }
     }
   });
 
@@ -100,6 +108,13 @@ function MboxStream(input, opts) {
 }
 
 MboxStream.prototype._transform = function(chunk, encoding, done) {
+  if (! this.parsedHeader) {
+    this.parsedHeader = true;
+    if (chunk.indexOf('From ') !== 0) {
+      if (this.strictMode) return done(new Error('NOT_AN_MBOX_FILE'));
+      return this.emit('finish');
+    }
+  }
   // Push chunks to the searcher.
   this.searcher.push(chunk);
   done();
