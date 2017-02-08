@@ -1,6 +1,6 @@
 {
   "name": "node-mbox",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "mbox parser for Node",
   "scripts": {
     "test": "mocha -R spec --require should test/"
