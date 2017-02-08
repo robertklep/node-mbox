@@ -8,7 +8,7 @@ mbox.on('message', function(msg) {
   // parse message using MailParser
   var mailparser = new MailParser({ streamAttachments : true });
   mailparser.on('headers', function(headers) {
-    console.log('From   :', headers.get('from'));
+    console.log('From   :', headers.get('from').value[0].address);
     console.log('Subject:', headers.get('subject'), '\n');
   });
   mailparser.write(msg);
