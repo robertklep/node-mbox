@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "isstream": "^0.1.2",
-    "mailparser": "^2.0.1",
     "streamsearch": "^0.1.2"
   }
 }

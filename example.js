@@ -1,3 +1,4 @@
+// mailparser": "^2.0.1",
 var MailParser  = require('mailparser').MailParser;
 var Mbox        = require('./src/mbox');
 var mbox        = new Mbox();
