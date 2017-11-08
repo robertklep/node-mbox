@@ -61,6 +61,9 @@ function MboxStream(input, opts) {
   // strict mode throws an error when a file doesn't look like an mbox file.
   this.strictMode = opts && opts.strict === true;
 
+  // stream messages
+  this.streamMessage = opts && opts.streamMessage === true;
+
   // output encoding
   this.encoding = (opts && opts.encoding) ? opts.encoding : 'binary';
 
@@ -74,32 +77,44 @@ function MboxStream(input, opts) {
   this.number_of_messages = 0;
 
   // done
-  var chunks  = [];
-  var matches = 0;
+  var messageStream;
   this.on('finish', function() {
-    if (matches) {
+    if (messageStream) {
       stream.number_of_messages++;
-      // Add the needle back in when emitting
-      stream.emit('message', 'From ' + chunks.join(''));
+      messageStream.on('end', function() {
+        stream.emit('end', stream.number_of_messages);
+      });
+      messageStream.push(null);
+    } else {
+      stream.emit('end', stream.number_of_messages);
     }
-    this.emit('end', stream.number_of_messages);
   });
 
   // setup stream searcher
   this.searcher = new StreamSearch('\nFrom ');
   this.searcher.on('info', function(isMatch, chunk, start, end) {
     if (chunk) {
-      chunk = chunk.toString(stream.encoding, start, end);
-      chunks.push(chunk);
+      messageStream.push(chunk.toString(stream.encoding, start, end));
     }
     if (isMatch) {
-      matches++;
-      // Add the needle back in when emitting
-      if (chunks.length) {
+      if (messageStream) {
         stream.number_of_messages++;
-        stream.emit('message', 'From ' + chunks.join(''));
-        chunks = [];
+        messageStream.push(null);
       }
+      messageStream = new Readable();
+      messageStream._read = function () {}
+      if (stream.streamMessage) {
+        stream.emit('message', messageStream);
+      } else {
+        var chunks = [];
+        messageStream.on('data', function(chunk) {
+          chunks.push(chunk);
+        });
+        messageStream.on('end', function() {
+          stream.emit('message', chunks.join(''));
+        });
+      }
+      messageStream.push('From ');
     }
   });
 

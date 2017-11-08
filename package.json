@@ -24,6 +24,7 @@
     "url": "git://github.com/robertklep/node-mbox.git"
   },
   "devDependencies": {
+    "mailparser": "^2.1.0",
     "mocha": "^3.2.0",
     "should": "^11.2.0",
     "through2": "^2.0.3"
