@@ -39,34 +39,54 @@ module.exports = class Mbox extends PassThrough {
 
   start(stream) {
     let firstLine     = true;
-    this.hasEnded     = false;
-    this.message      = [];
+    let streaming     = this.opts.stream === true;
+    let msgStream     = null;
+    let message       = [];
     this.messageCount = 0;
-    this.on('end', () => this.emitMessageIfPossible())
-        .pipe(split('\n'))
-        .on('data', line => {
-          if (this.hasEnded) return;
-          let postmark = line.toString().startsWith('From ');
-          if (firstLine && ! postmark) {
-            if (this.opts.strict === true) {
-              this.emit('error', Error('NOT_AN_MBOX_FILE'))
-            }
-            this.hasEnded = true;
-            this.end();
-            return;
-          }
-          firstLine = false;
-          if (postmark) {
-            this.emitMessageIfPossible();
-          }
-          this.message.push(line);
-        });
-  }
 
-  emitMessageIfPossible() {
-    if (! this.message.length) return;
-    this.messageCount++;
-    this.emit('message', Buffer.concat(this.message));
-    this.message = [];
+    let emit = () => {
+      if (! message.length || streaming) return;
+      this.messageCount++;
+      this.emit('message', Buffer.concat(message));
+      message = [];
+    }
+
+    this.on('end', () => {
+      msgStream && msgStream.end();
+      emit();
+    }).pipe(split('\n')).on('data', line => {
+      if (! this.writable) return;
+
+      // Check for the `mbox` "post mark".
+      let postmark = line.toString().startsWith('From ');
+
+      // If this is the first line of the file, and it doesn't have
+      // a post mark, it's not considered to be a (valid) mbox file.
+      if (firstLine && ! postmark) {
+        if (this.opts.strict === true) {
+          this.emit('error', Error('NOT_AN_MBOX_FILE'))
+        }
+        this.end();
+        if (msgStream) {
+          msgStream.end();
+        }
+        return;
+      }
+
+      firstLine = false;
+      if (streaming) {
+        if (postmark) {
+          msgStream && msgStream.end();
+          msgStream = new PassThrough();
+          this.emit('message', msgStream);
+        }
+        msgStream.write(line);
+      } else {
+        if (postmark) {
+          emit();
+        }
+        message.push(line);
+      }
+    });
   }
 }
