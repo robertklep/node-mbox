@@ -1,123 +1,72 @@
-var Readable      = require('stream').Readable;
-var Transform     = require('stream').Transform;
-var StreamSearch  = require('streamsearch');
-var util          = require('util');
-var fs            = require('fs');
-var Stream        = require('stream');
-var isStream      = require('isstream');
+const fs              = require('fs');
+const { PassThrough } = require('stream');
+const stringToStream  = require('string-to-stream');
+const isStream        = require('isstream');
+const split           = require('line-stream');
 
-util.inherits(StringReader, Readable);
-util.inherits(MboxStream, Transform);
+module.exports = class Mbox extends PassThrough {
 
-function StringReader(string) {
-  // setup stream reader
-  if (!(this instanceof StringReader))
-    return new StringReader();
-  Readable.call(this);
-  this.string = string;
-}
+  constructor(source, opts) {
+    super();
 
-StringReader.prototype._read = function(size) {
-  if (this.string.length === 0) {
-    this.push(null);
-  }
-  else {
-    this.push(this.string.slice(0, size));
-    this.string = this.string.slice(size);
-  }
-};
+    // Wait for `pipe` events.
+    this.on('pipe', this.start.bind(this));
 
-function MboxStream(input, opts) {
-  var stream = this;
-
-  // handle arguments
-  if (input !== undefined) {
-    var klass   = input.constructor.name;
-    var handle  = null;
-
-    if (klass === 'String' || klass === 'Buffer') {
-      // either filename...
-      if (fs.existsSync(input)) {
-        handle = fs.createReadStream(input);
+    // Determine source type.
+    let stream;
+    if (isStream(source)) {
+      stream = source;
+    } else if (typeof source === 'string' || Buffer.isBuffer(source)) {
+      // May be a filename.
+      if (fs.existsSync(source)) {
+        stream = fs.createReadStream(source);
       } else {
-        // ...or raw input string (handled by StringReader)
-        handle = new StringReader(input);
+        // Otherwise, treat as raw input.
+        stream = stringToStream(source);
       }
-    } else if (isStream(input)) {
-      handle = input;
-    } else if (klass === 'Object') {
-      opts = input;
+    } else {
+      this.opts = source || {};
+      // Probably going to be piped to.
+      return;
     }
 
-    if (handle) {
-      // set encoding
-      handle.setEncoding('ascii');
+    // Store options.
+    this.opts = opts || {};
 
-      // pipe handle to ourselves
-      handle.pipe(this);
-    }
+    // We have a stream, start splitting.
+    stream.pipe(this);
   }
 
-  // strict mode throws an error when a file doesn't look like an mbox file.
-  this.strictMode = opts && opts.strict === true;
-
-  // output encoding
-  this.encoding = (opts && opts.encoding) ? opts.encoding : 'binary';
-
-  // setup stream transformer
-  if (!(this instanceof MboxStream)) {
-    return new MboxStream(opts);
+  start(stream) {
+    let firstLine     = true;
+    this.hasEnded     = false;
+    this.message      = [];
+    this.messageCount = 0;
+    this.on('end', () => this.emitMessageIfPossible())
+        .pipe(split('\n'))
+        .on('data', line => {
+          if (this.hasEnded) return;
+          let postmark = line.toString().startsWith('From ');
+          if (firstLine && ! postmark) {
+            if (this.opts.strict === true) {
+              this.emit('error', Error('NOT_AN_MBOX_FILE'))
+            }
+            this.hasEnded = true;
+            this.end();
+            return;
+          }
+          firstLine = false;
+          if (postmark) {
+            this.emitMessageIfPossible();
+          }
+          this.message.push(line);
+        });
   }
-  Transform.call(this, opts);
 
-  // keep track of number of messages found
-  this.number_of_messages = 0;
-
-  // done
-  var chunks  = [];
-  var matches = 0;
-  this.on('finish', function() {
-    if (matches) {
-      stream.number_of_messages++;
-      // Add the needle back in when emitting
-      stream.emit('message', 'From ' + chunks.join(''));
-    }
-    this.emit('end', stream.number_of_messages);
-  });
-
-  // setup stream searcher
-  this.searcher = new StreamSearch('\nFrom ');
-  this.searcher.on('info', function(isMatch, chunk, start, end) {
-    if (chunk) {
-      chunk = chunk.toString(stream.encoding, start, end);
-      chunks.push(chunk);
-    }
-    if (isMatch) {
-      matches++;
-      // Add the needle back in when emitting
-      if (chunks.length) {
-        stream.number_of_messages++;
-        stream.emit('message', 'From ' + chunks.join(''));
-        chunks = [];
-      }
-    }
-  });
-
-  // Push a dummy \n to the search so we match the first message.
-  this.searcher.push('\n');
+  emitMessageIfPossible() {
+    if (! this.message.length) return;
+    this.messageCount++;
+    this.emit('message', Buffer.concat(this.message));
+    this.message = [];
+  }
 }
-
-MboxStream.prototype._transform = function(chunk, encoding, done) {
-  if (! this.parsedHeader) {
-    this.parsedHeader = true;
-    if (chunk.indexOf('From ') !== 0) {
-      if (this.strictMode) return done(new Error('NOT_AN_MBOX_FILE'));
-      return this.emit('finish');
-    }
-  }
-  // Push chunks to the searcher.
-  this.searcher.push(chunk);
-  done();
-};
-
-module.exports = MboxStream;

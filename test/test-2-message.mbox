@@ -8,7 +8,7 @@ Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
 
-The mail content...
+The mail content of mail 1...
 
 From abc@gmail.com Sun Dec 25 21:33:37 2011
 Date: Sun, 25 Dec 2011 21:33:37 +0800
@@ -20,5 +20,5 @@ Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
 
-The mail content of mail 2...
+The mail content of mail 2....
 

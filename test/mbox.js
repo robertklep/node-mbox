@@ -1,14 +1,16 @@
-var Mbox     = require('../src/mbox');
-var assert   = require('assert');
-var fs       = require('fs');
-var through2 = require('through2');
-var test     = function(parser, expectCount, done) {
-  var count    = 0;
-  var messages = [];
-  var errored  = false;
+const Mbox       = require('../src/mbox');
+const assert     = require('assert');
+const { expect } = require('chai');
+const fs         = require('fs');
+const through2   = require('through2');
+
+const test = function(parser, expectCount, done) {
+  let count    = 0;
+  let messages = [];
+  let errored  = false;
 
   parser.on('error', function(err) {
-    errored = true;
+    errored = err;
     done(err);
   });
 
@@ -17,30 +19,24 @@ var test     = function(parser, expectCount, done) {
     messages.push(msg);
   });
 
-  parser.on('end', function(num) {
+  parser.on('end', function() {
     if (errored) return;
-    count.should.equal(expectCount);
-    num.should.equal(count);
+    expect(count).to.equal(expectCount);
+    expect(parser.messageCount).to.equal(count);
     if (expectCount === 0) {
       return done();
     }
-    if (expectCount >= 1) {
-      messages[0].length.should.equal(286);
-    }
-    if (expectCount >= 2) {
-      messages[1].length.should.equal(296);
-    }
-    if (expectCount >= 3) {
-      messages[2].length.should.equal(296);
-    }
-    if (expectCount >= 4) {
-      messages[3].length.should.equal(296);
-    }
+    messages.forEach((message, index) => {
+      let expected = index === 0 ? 297 :
+                     index === 1 ? 298 :
+                     index === 2 ? 299 : 300;
+      expect(message).to.have.length(expected);
+    });
     done();
   });
 };
 
-var FILES = [
+const FILES = [
   [ 'Empty file',                  'test-0-message.mbox', 0 ],
   [ 'Containing 1 message',        'test-1-message.mbox', 1 ],
   [ 'Containing 2 messages',       'test-2-message.mbox', 2 ],
@@ -52,9 +48,9 @@ var FILES = [
 describe('parser', function() {
 
   FILES.forEach(function(data) {
-    var testName     = data[0];
-    var fileName     = __dirname + '/' + data[1];
-    var messageCount = data[2];
+    let testName     = data[0];
+    let fileName     = __dirname + '/' + data[1];
+    let messageCount = data[2];
 
     describe(testName, function() {
 
@@ -63,25 +59,25 @@ describe('parser', function() {
       });
 
       it('as a string', function(done) {
-        var mailbox = fs.readFileSync(fileName);
+        let mailbox = fs.readFileSync(fileName);
         test(new Mbox(mailbox), messageCount, done);
       });
 
       it('as a stream', function(done) {
-        var stream = fs.createReadStream(fileName);
+        let stream = fs.createReadStream(fileName);
         test(new Mbox(stream), messageCount, done);
       });
 
       it('as a through2 stream', function(done) {
-        var stream        = fs.createReadStream(fileName);
-        var throughstream = through2();
+        let stream        = fs.createReadStream(fileName);
+        let throughstream = through2();
         stream.pipe(throughstream);
         test(new Mbox(throughstream), messageCount, done);
       });
 
       it('piped', function(done) {
-        var stream  = fs.createReadStream(fileName);
-        var parser  = new Mbox();
+        let stream  = fs.createReadStream(fileName);
+        let parser  = new Mbox();
         stream.pipe(parser);
         test(parser, messageCount, done);
       });
@@ -100,8 +96,9 @@ describe('parser', function() {
     });
 
     it('should throw an error in strict mode when a file isn\'t an mbox file (but has one attached)', function(done) {
-      test(new Mbox(__dirname + '/test-0-message.mbox', { strict : true }), 0, function(err) {
-        assert.ifError(err);
+      test(new Mbox(__dirname + '/test-attached.mbox', { strict : true }), 0, function(err) {
+        assert(err);
+        assert(err.message, 'NOT_AN_MBOX_FILE');
         done();
       });
     });
