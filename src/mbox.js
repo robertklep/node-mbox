@@ -4,6 +4,8 @@ const stringToStream  = require('string-to-stream');
 const isStream        = require('isstream');
 const split           = require('line-stream');
 
+const POSTMARK        = Buffer.from('From ');
+
 module.exports = class Mbox extends PassThrough {
 
   constructor(source, opts) {
@@ -57,12 +59,16 @@ module.exports = class Mbox extends PassThrough {
     }).pipe(split('\n')).on('data', line => {
       if (! this.writable) return;
 
-      // Check for the `mbox` "post mark".
-      let postmark = line.toString().startsWith('From ');
+      // Check for the `mbox` "post mark" (`From `).
+      let hasPostmark = line[0] === POSTMARK[0] &&
+                        line[1] === POSTMARK[1] &&
+                        line[2] === POSTMARK[2] &&
+                        line[3] === POSTMARK[3] &&
+                        line[4] === POSTMARK[4];
 
       // If this is the first line of the file, and it doesn't have
       // a post mark, it's not considered to be a (valid) mbox file.
-      if (firstLine && ! postmark) {
+      if (firstLine && ! hasPostmark) {
         if (this.opts.strict === true) {
           this.emit('error', Error('NOT_AN_MBOX_FILE'))
         }
@@ -75,14 +81,14 @@ module.exports = class Mbox extends PassThrough {
 
       firstLine = false;
       if (streaming) {
-        if (postmark) {
+        if (hasPostmark) {
           msgStream && msgStream.end();
           msgStream = new PassThrough();
           this.emit('message', msgStream);
         }
         msgStream.write(line);
       } else {
-        if (postmark) {
+        if (hasPostmark) {
           emit();
         }
         message.push(line);
