@@ -12,7 +12,7 @@ module.exports = class Mbox extends PassThrough {
     super();
 
     // Wait for `pipe` events.
-    this.on('pipe', this.start.bind(this));
+    this.on('pipe', this.onPipe.bind(this));
 
     // Determine source type.
     let stream;
@@ -39,7 +39,7 @@ module.exports = class Mbox extends PassThrough {
     stream.pipe(this);
   }
 
-  start(stream) {
+  onPipe(stream) {
     let firstLine     = true;
     let streaming     = this.opts.stream === true;
     let msgStream     = null;
@@ -53,9 +53,13 @@ module.exports = class Mbox extends PassThrough {
       message = [];
     }
 
+    // When input stream ends, emit any last messages;
+    stream.on('end', () => {
+      emit();
+    });
+
     this.on('end', () => {
       msgStream && msgStream.end();
-      emit();
     }).pipe(split('\n')).on('data', line => {
       if (! this.writable) return;
 
