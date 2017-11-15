@@ -49,7 +49,8 @@ module.exports = class Mbox extends PassThrough {
     let emit = () => {
       if (! message.length || streaming) return;
       this.messageCount++;
-      this.emit('message', Buffer.concat(message));
+      let buffer = Buffer.concat(message);
+      this.emit('message', this.opts.encoding ? buffer.toString(this.opts.encoding) : buffer);
       message = [];
     }
 
