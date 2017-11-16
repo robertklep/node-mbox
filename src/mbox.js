@@ -1,10 +1,10 @@
-const fs              = require('fs');
-const { PassThrough } = require('stream');
-const stringToStream  = require('string-to-stream');
-const isStream        = require('isstream');
-const split           = require('line-stream');
-
-const POSTMARK        = Buffer.from('From ');
+'use strict';
+const fs             = require('fs');
+const PassThrough    = require('stream').PassThrough;
+const stringToStream = require('string-to-stream');
+const isStream       = require('isstream');
+const split          = require('line-stream');
+const POSTMARK       = Buffer.from('From ');
 
 module.exports = class Mbox extends PassThrough {
 
