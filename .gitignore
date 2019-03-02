@@ -2,3 +2,4 @@ node_modules
 *.sw?
 test.js
 v8.log
+debugging
