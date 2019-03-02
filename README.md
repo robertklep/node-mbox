@@ -40,7 +40,7 @@ $ node example < test/test-4-message.mbox
 
 *  `encoding` : output encoding (default: `undefined`, meaning message data is passed as `Buffer`)
 *  `strict` : enable strict mode (emits an error when input doesn't look like valid mbox data)
-*  `streaming`: instead of collecting and emitting entire messages, emit a stream. This is useful if you want to process mailboxes that contain large messages (the aforementioned `mailparser` accepts message streams directly)
+*  `stream`: instead of collecting and emitting entire messages, emit a stream. This is useful if you want to process mailboxes that contain large messages (the aforementioned `mailparser` accepts message streams directly)
 
 ### Usage
 
@@ -83,7 +83,7 @@ mbox.on('end', function() {
 
 Streaming example:
 ```javascript
-const mbox = new Mbox({ streaming : true });
+const mbox = new Mbox({ stream : true });
 
 // `message` event emits stream
 mbox.on('message', function(stream) {
