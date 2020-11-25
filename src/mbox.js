@@ -1,69 +1,26 @@
 'use strict';
 const fs             = require('fs');
-const PassThrough    = require('stream').PassThrough;
+const {PassThrough,
+  Transform}         = require('stream');
 const stringToStream = require('string-to-stream');
 const isStream       = require('isstream');
 const split          = require('line-stream');
 const POSTMARK       = Buffer.from('From ');
 
-module.exports = class Mbox extends PassThrough {
-
-  constructor(source, opts) {
-    super();
-
-    // Wait for `pipe` events.
-    this.on('pipe', this.onPipe.bind(this));
-
-    // Determine source type.
-    let stream;
-    if (isStream(source)) {
-      stream = source;
-    } else if (typeof source === 'string' || Buffer.isBuffer(source)) {
-      // May be a filename.
-      if (fs.existsSync(source)) {
-        stream = fs.createReadStream(source);
-      } else {
-        // Otherwise, treat as raw input.
-        stream = stringToStream(source);
-      }
-    } else {
-      this.opts = source || {};
-      // Probably going to be piped to.
-      return;
-    }
-
-    // Store options.
+module.exports = class Mbox extends Transform {
+  constructor(opts) {
     this.opts = opts || {};
-
-    // We have a stream, start splitting.
-    stream.pipe(this);
-  }
-
-  onPipe(stream) {
-    let firstLine     = true;
-    let streaming     = this.opts.stream === true;
-    let msgStream     = null;
-    let message       = [];
+    this.firstLine = true;
+    this.message = [];
     this.messageCount = 0;
 
-    let emit = () => {
-      if (! message.length || streaming) return;
-      this.messageCount++;
-      let buffer = Buffer.concat(message);
-      this.emit('message', this.opts.encoding ? buffer.toString(this.opts.encoding) : buffer);
-      message = [];
-    }
+    super();
 
-    // When input stream ends, emit any last messages;
-    stream.on('end', () => {
-      emit();
-    });
+    this.lineSplitter = split('\n');
+  }
 
-    this.on('end', () => {
-      msgStream && msgStream.end();
-    }).pipe(split('\n')).on('data', line => {
-      if (! this.writable) return;
-
+  /* data as line from line-stream expected */
+  _transform(line, encoding, callback) {
       // Check for the `mbox` "post mark" (`From `).
       let hasPostmark = line[0] === POSTMARK[0] &&
                         line[1] === POSTMARK[1] &&
@@ -71,33 +28,25 @@ module.exports = class Mbox extends PassThrough {
                         line[3] === POSTMARK[3] &&
                         line[4] === POSTMARK[4];
 
+      /* TODO: check email after From see https://tools.ietf.org/rfc/rfc4155.txt */
+
       // If this is the first line of the file, and it doesn't have
       // a post mark, it's not considered to be a (valid) mbox file.
-      if (firstLine && ! hasPostmark) {
+      if (this.firstLine && !hasPostmark) {
         if (this.opts.strict === true) {
-          this.emit('error', Error('NOT_AN_MBOX_FILE'))
-        }
-        this.end();
-        if (msgStream) {
-          msgStream.end();
+          this.end(new Error('NOT_AN_MBOX_FILE'));
+          return;
         }
         return;
+      } else if (hasPostmark) {
+        if( !this.firstLine ) {
+          this.write( new Buffer(this.message.join("\n")), this.opts.encoding); /* TODO: solve backpressure! */
+        }
+        else {
+          this.message.push(line);
+        }
       }
 
-      firstLine = false;
-      if (streaming) {
-        if (hasPostmark) {
-          msgStream && msgStream.end();
-          msgStream = new PassThrough();
-          this.emit('message', msgStream);
-        }
-        msgStream.write(line);
-      } else {
-        if (hasPostmark) {
-          emit();
-        }
-        message.push(line);
-      }
-    });
+      this.firstLine = false;
   }
 }
