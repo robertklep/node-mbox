@@ -39,15 +39,12 @@ class Mbox extends Transform {
 
     /* TODO: check email after From see https://tools.ietf.org/rfc/rfc4155.txt */
     if (this.firstLine && !hasPostmark) {
-      if (this.opts.strict === true) {
-        this.end(new Error('NOT_AN_MBOX_FILE'));
-        return;
-      }
-
+      this.destroy(new Error('NOT_AN_MBOX_FILE'));
       return;
     } else if (hasPostmark) {
       if( !this.firstLine ) {
         this.push( Buffer.concat(this.message) );
+        this.messageCount++;
       }
       this.message = [];
 
@@ -75,6 +72,7 @@ class Mbox extends Transform {
 /**
  * MboxStream simply pipes `split('\n')` with Mbox().
  *
+ * @param {stream.Readable} readStream An instance of Readable stream.
  * @param {*} opts Params passed to Mbox.
  *
  * @returns {Mbox} An instance of Mbox stream.
@@ -89,7 +87,7 @@ function MboxStream (opts) {
  * MboxStreamConsumer is simple abstract class extending Writable.
  * You must implement consume method which consumes particural messages.
  *
- * @example fs.createReadStream().pipe(new MboxStream()).pipe((new MboxStreamConsumer()).consume = function(message, encoding, cb){
+ * @example fs.createReadStream().pipe(MboxStream()).pipe((new MboxStreamConsumer()).consume = function(message, encoding, cb){
  *    console.log(message);
  *    setImmediate(cb);
  *  }).on("finish", cb);
