@@ -1,6 +1,6 @@
 // mailparser": "^2.1.0",
 const MailParser = require('mailparser').MailParser;
-const {Mbox, MboxStream}= require('./src/mbox');
+const {MboxStream}= require('./src/mbox');
 
 
 // pipe stdin to mbox parser
