@@ -1,6 +1,6 @@
 {
   "name": "node-mbox",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "mbox parser for Node",
   "scripts": {
     "test": "mocha -R spec test/"
@@ -25,13 +25,10 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "mocha": "^3.5.3",
-    "through2": "^2.0.3"
+    "mocha": "^8.2.1"
   },
   "dependencies": {
-    "isstream": "^0.1.2",
-    "line-stream": "^1.0.0",
-    "string-to-stream": "^1.1.0"
+    "line-stream": "^1.0.0"
   },
   "engines": {
     "node": ">=4.0.0"
