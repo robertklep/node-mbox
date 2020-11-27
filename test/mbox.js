@@ -3,7 +3,7 @@ const {Mbox, MboxStream} = require('../src/mbox');
 const assert     = require('assert');
 const { expect } = require('chai');
 const fs         = require('fs');
-const split                 = require('line-stream');
+const split      = require('line-stream');
 
 const test = function(parser, expectCount, headerP, done) {
   let count    = 0;
