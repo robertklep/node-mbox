@@ -53,7 +53,6 @@ const FILES = [
 ];
 
 describe('parser', function() {
-
   FILES.slice(0, -1).forEach(function(data) {
     let testName     = data[0];
     let fileName     = __dirname + '/' + data[1];
@@ -63,9 +62,7 @@ describe('parser', function() {
       it('as a stream without header', function(done) {
         let fstream = fs.createReadStream(fileName);
         test(
-          fstream
-            .pipe(split('\n'))
-            .pipe(new Mbox()), messageCount, false, done);
+          MboxStream(fstream), messageCount, false, done);
       });
 
       it('as a stream with header', function(done) {
@@ -75,15 +72,12 @@ describe('parser', function() {
             .pipe(split('\n'))
             .pipe(new Mbox({includeMboxHeader: true})), messageCount, true, done);
       });
-
-
     });
-
   });
 
   describe('Strict mode', function() {
     it('should throw an error in strict mode when a file isn\'t an mbox file', function(done) {
-      test(fs.createReadStream(__dirname + '/test-not-an.mbox').pipe(MboxStream()), 0, false, function(err) {
+      test(MboxStream(fs.createReadStream(__dirname + '/test-not-an.mbox')), 0, false, function(err) {
         assert(err);
         assert(err.message, 'NOT_AN_MBOX_FILE');
         done();
@@ -91,7 +85,7 @@ describe('parser', function() {
     });
 
     it('should throw an error in strict mode when a file isn\'t an mbox file (but has one attached)', function(done) {
-      test(fs.createReadStream(__dirname + '/test-attached.mbox').pipe(MboxStream()), 0, false, function(err) {
+      test(MboxStream(fs.createReadStream(__dirname + '/test-attached.mbox')), 0, false, function(err) {
         assert(err);
         assert(err.message, 'NOT_AN_MBOX_FILE');
         done();
@@ -99,7 +93,7 @@ describe('parser', function() {
     });
 
     it('should not throw an error in strict mode when a file is empty', function(done) {
-      test(fs.createReadStream(__dirname + '/test-0-message.mbox').pipe(MboxStream()), 0, false, function(err) {
+      test(MboxStream(fs.createReadStream(__dirname + '/test-0-message.mbox')), 0, false, function(err) {
         assert.ifError(err);
         done();
       });

@@ -1,10 +1,10 @@
 // mailparser": "^2.1.0",
-const MailParser  = require('mailparser').MailParser;
-const Mbox        = require('./src/mbox');
-const mbox        = new Mbox();
+const MailParser = require('mailparser').MailParser;
+const {Mbox, MboxStream}= require('./src/mbox');
 
-// wait for message events
-mbox.on('message', function(msg) {
+
+// pipe stdin to mbox parser
+MboxStream(process.stdin).on('data', function(msg) {
   // parse message using MailParser
   let mailparser = new MailParser({ streamAttachments : true });
   mailparser.on('headers', function(headers) {
@@ -14,6 +14,3 @@ mbox.on('message', function(msg) {
   mailparser.write(msg);
   mailparser.end();
 });
-
-// pipe stdin to mbox parser
-process.stdin.pipe(mbox);

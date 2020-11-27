@@ -18,6 +18,11 @@ const POSTMARK              = Buffer.from('From ');
  * });
  */
 class Mbox extends Transform {
+  /**
+   *
+   * @param {*} opts Options.
+   * @param {Boolean} opts.includeMboxHeader Predicate if include header of Mbox entry i.e. 'From ... ...' or not.
+   */
   constructor(opts) {
     super();
     this.opts = opts || {includeMboxHeader: false};
@@ -82,8 +87,8 @@ class Mbox extends Transform {
  *
  * @returns {Mbox} An instance of Mbox stream.
   */
-function MboxStream (opts) {
-  return split('\n').pipe(new Mbox(opts));
+function MboxStream(inputStream, opts) {
+  return inputStream.pipe(split('\n')).pipe(new Mbox(opts));
 }
 
 /**
