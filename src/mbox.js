@@ -20,7 +20,7 @@ const POSTMARK              = Buffer.from('From ');
 class Mbox extends Transform {
   constructor(opts) {
     super();
-    this.opts = opts || {};
+    this.opts = opts || {includeMboxHeader: false};
     this.firstLine = true;
     this.message = [];
     this.messageCount = 0;
@@ -46,7 +46,12 @@ class Mbox extends Transform {
         this.push( Buffer.concat(this.message) );
         this.messageCount++;
       }
+
       this.message = [];
+
+      if( this.opts.includeMboxHeader ) {
+        this.message.push(line);
+      }
 
       callback();
     }

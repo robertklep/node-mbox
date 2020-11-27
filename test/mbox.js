@@ -5,7 +5,7 @@ const { expect } = require('chai');
 const fs         = require('fs');
 const split                 = require('line-stream');
 
-const test = function(parser, expectCount, done) {
+const test = function(parser, expectCount, headerP, done) {
   let count    = 0;
   let messages = [];
   let errored  = false;
@@ -37,7 +37,7 @@ const test = function(parser, expectCount, done) {
       let expected = index === 0 ? 297 :
                      index === 1 ? 298 :
                      index === 2 ? 299 : 300;
-      expect(message).to.have.length(expected - Buffer.byteLength("From abc@gmail.com Sun Dec 25 21:33:37 2011\n"));
+      expect(message).to.have.length(expected - (headerP ? 0 : Buffer.byteLength("From abc@gmail.com Sun Dec 25 21:33:37 2011\n")));
     });
     done();
   });
@@ -60,20 +60,30 @@ describe('parser', function() {
     let messageCount = data[2];
 
     describe(testName, function() {
-      it('as a stream', function(done) {
+      it('as a stream without header', function(done) {
         let fstream = fs.createReadStream(fileName);
         test(
           fstream
             .pipe(split('\n'))
-            .pipe(new Mbox()), messageCount, done);
+            .pipe(new Mbox()), messageCount, false, done);
       });
+
+      it('as a stream with header', function(done) {
+        let fstream = fs.createReadStream(fileName);
+        test(
+          fstream
+            .pipe(split('\n'))
+            .pipe(new Mbox({includeMboxHeader: true})), messageCount, true, done);
+      });
+
+
     });
 
   });
 
   describe('Strict mode', function() {
     it('should throw an error in strict mode when a file isn\'t an mbox file', function(done) {
-      test(fs.createReadStream(__dirname + '/test-not-an.mbox').pipe(MboxStream()), 0, function(err) {
+      test(fs.createReadStream(__dirname + '/test-not-an.mbox').pipe(MboxStream()), 0, false, function(err) {
         assert(err);
         assert(err.message, 'NOT_AN_MBOX_FILE');
         done();
@@ -81,7 +91,7 @@ describe('parser', function() {
     });
 
     it('should throw an error in strict mode when a file isn\'t an mbox file (but has one attached)', function(done) {
-      test(fs.createReadStream(__dirname + '/test-attached.mbox').pipe(MboxStream()), 0, function(err) {
+      test(fs.createReadStream(__dirname + '/test-attached.mbox').pipe(MboxStream()), 0, false, function(err) {
         assert(err);
         assert(err.message, 'NOT_AN_MBOX_FILE');
         done();
@@ -89,7 +99,7 @@ describe('parser', function() {
     });
 
     it('should not throw an error in strict mode when a file is empty', function(done) {
-      test(fs.createReadStream(__dirname + '/test-0-message.mbox').pipe(MboxStream()), 0, function(err) {
+      test(fs.createReadStream(__dirname + '/test-0-message.mbox').pipe(MboxStream()), 0, false, function(err) {
         assert.ifError(err);
         done();
       });
